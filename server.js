@@ -13,10 +13,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/chat-app')
-.then(()=>console.log("MongoDB connected"))
-.catch(err=>console.log(err));
+// MongoDB Atlas connection
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+.then(() => console.log("MongoDB connected"))
+.catch(err => console.log(err));
 
 // Schema
 const messageSchema = new mongoose.Schema({
@@ -28,21 +28,19 @@ const messageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', messageSchema);
 
-// Home
-app.get('/', (req,res)=>{
+// Home route
+app.get('/', (req,res) => {
     res.sendFile(path.join(__dirname,'public/index.html'));
 });
 
-// ✅ DELETE MESSAGE (OWNER ONLY)
-app.delete('/api/message/:id', async (req,res)=>{
+// DELETE MESSAGE (OWNER ONLY)
+app.delete('/api/message/:id', async (req,res) => {
     const { username } = req.body;
-
     try {
         const msg = await Message.findById(req.params.id);
         if(!msg) return res.status(404).json({ success:false });
 
-        // 🔐 ownership check
-        if(msg.username !== username){
+        if(msg.username !== username) {
             return res.status(403).json({ success:false, message:"Not allowed" });
         }
 
@@ -54,15 +52,15 @@ app.delete('/api/message/:id', async (req,res)=>{
 });
 
 // Socket
-io.on('connection', (socket)=>{
+io.on('connection', (socket) => {
     console.log("Connected:", socket.id);
 
-    socket.on('request messages', async ()=>{
+    socket.on('request messages', async () => {
         const msgs = await Message.find().sort({ timestamp:1 });
         socket.emit('load messages', msgs);
     });
 
-    socket.on('user join', username=>{
+    socket.on('user join', username => {
         socket.username = username;
         io.emit('chat message', {
             username:'System',
@@ -72,12 +70,12 @@ io.on('connection', (socket)=>{
         });
     });
 
-    socket.on('chat message', async msg=>{
+    socket.on('chat message', async msg => {
         const saved = await Message.create(msg);
         io.emit('chat message', saved);
     });
 
-    socket.on('disconnect', ()=>{
+    socket.on('disconnect', () => {
         if(socket.username){
             io.emit('chat message',{
                 username:'System',
@@ -89,4 +87,6 @@ io.on('connection', (socket)=>{
     });
 });
 
-server.listen(3000, ()=>console.log("Server running on http://localhost:3000"));
+// Dynamic port for Render
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
