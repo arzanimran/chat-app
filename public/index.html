@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat App MYLOVE</title>
+<style>
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0; padding: 0;
+    display: flex; justify-content: center; align-items: center;
+    height: 100vh; overflow: hidden;
+    background-color: #121212;
+}
+#chat-container {
+    width: 80%; max-width: 600px;
+    background-color: #1E1E2C; color: #fff;
+    padding: 20px; border-radius: 10px;
+    height: 80vh; display: flex; flex-direction: column;
+    opacity: 0; transform: scale(0.8);
+}
+#username-container { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; }
+#username-container input { padding: 10px; width: 250px; border-radius: 5px; border: 2px solid #ccc; font-size: 16px; }
+#username-container button { padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+#messages { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; display:none; }
+#messages li { padding: 10px; margin-bottom: 10px; border-radius: 5px; max-width: 90%; word-wrap: break-word; background: #2C2C3C; }
+img, video { max-width: 100%; border-radius: 10px; }
+#form { display: flex; justify-content: space-between; align-items: center; opacity: 0; transform: translateY(50px); margin-top: 10px; display:none; }
+#input { flex: 1; padding: 10px; font-size: 16px; border-radius: 5px; border: 2px solid #ccc; }
+#send, #file-input-btn { background: #007BFF; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-left: 10px; }
+#file-input { display: none; }
+#file-input-btn { background: #28a745; }
+#file-input-btn:hover { background-color: green; }
+#send:hover { background-color: rgb(81, 81, 147); }
+button.delete-btn { margin-left: 10px; background: red; color: white; border: none; padding: 3px 6px; border-radius: 3px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="username-container">
+        <input id="password" type="password" placeholder="Enter password">
+        <input id="username" type="text" placeholder="Enter your name" style="display:none;">
+        <button id="join-btn">Next</button>
+    </div>
+
+    <ul id="messages"></ul>
+
+    <form id="form">
+        <input id="input" autocomplete="off" placeholder="Type a message..." />
+        <input type="file" id="file-input" accept="image/*,video/*" />
+        <button type="button" id="file-input-btn">Attach File</button>
+        <button id="send">Send</button>
+    </form>
+</div>
+
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script>
+const socket = io();
+const form = document.getElementById('form');
+const input = document.getElementById('input');
+const fileInput = document.getElementById('file-input');
+const fileInputBtn = document.getElementById('file-input-btn');
+const messages = document.getElementById('messages');
+const joinBtn = document.getElementById('join-btn');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const usernameContainer = document.getElementById('username-container');
+const chatContainer = document.getElementById('chat-container');
+
+let username = '';
+let loggedIn = false;
+let passwordStage = true;
+
+// Animation
+window.onload = () => {
+    gsap.to(chatContainer, { opacity: 1, scale: 1, duration: 1.5, ease: 'back.out(1.6)' });
+};
+
+// Join logic
+joinBtn.addEventListener('click', async () => {
+    if(passwordStage) {
+        if(passwordInput.value !== 'arzan') { alert('Wrong password!'); return; }
+        passwordStage = false;
+        passwordInput.style.display = 'none';
+        usernameInput.style.display = 'block';
+        joinBtn.textContent = 'Join Chat';
+        usernameInput.focus();
+    } else {
+        username = usernameInput.value.trim();
+        if(!username) { alert('Enter your name!'); return; }
+
+        loggedIn = true;
+        socket.emit('user join', username);
+        usernameContainer.style.display = 'none';
+        messages.style.display = 'block';
+        form.style.display = 'flex';
+        gsap.to(form, { opacity:1, y:0, duration:1, ease:'back.out(1.7)' });
+
+        // Load previous messages only after login
+        socket.emit('request messages');
+    }
+});
+
+// Display messages
+function displayMessage(msg) {
+    if(!loggedIn) return; // prevent messages before login
+    const item = document.createElement('li');
+    const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString();
+    item.innerHTML = `<strong>${msg.username} [${time}]:</strong> `;
+
+    if(msg.type === 'text') item.innerHTML += msg.content;
+    else if(msg.type === 'file') {
+        const media = msg.content.startsWith('data:image') ? new Image() : document.createElement('video');
+        media.src = msg.content; media.controls = true; media.style.width='100%';
+        item.appendChild(media);
+    }
+
+    // Delete button only after login
+    if(msg._id){
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.className = 'delete-btn';
+        delBtn.onclick = async () => {
+            await fetch(`/api/message/${msg._id}`, { method:'DELETE' });
+            item.remove();
+        }
+        item.appendChild(delBtn);
+    }
+
+    messages.appendChild(item);
+    messages.scrollTop = messages.scrollHeight;
+    gsap.from(item, { opacity:0, y:50, duration:1, ease:'power2.out' });
+}
+
+// Socket events
+socket.on('chat message', msg => displayMessage(msg));
+socket.on('load messages', msgs => msgs.forEach(displayMessage));
+
+// Send message
+form.addEventListener('submit', e => {
+    e.preventDefault();
+    if(!loggedIn) return;
+    if(input.value){
+        const msg = { username, type:'text', content:input.value };
+        socket.emit('chat message', msg);
+        input.value = '';
+    }
+    if(fileInput.files.length > 0){
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+            const msg = { username, type:'file', content:reader.result, filename:file.name };
+            socket.emit('chat message', msg);
+        };
+        reader.readAsDataURL(file);
+        fileInput.value = '';
+    }
+});
+
+fileInputBtn.addEventListener('click', () => { if(loggedIn) fileInput.click(); });
+</script>
+</body>
+</html>
