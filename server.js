@@ -1,11 +1,10 @@
-require('dotenv').config();
-
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
-const cors = require('cors');
-const mongoose = require('mongoose');
+require("dotenv").config();
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const path = require("path");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
 const app = express();
 const server = http.createServer(app);
@@ -13,82 +12,129 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
-// MongoDB Atlas connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-.then(() => console.log("MongoDB connected"))
-.catch(err => console.log(err));
 
-// Schema
-const messageSchema = new mongoose.Schema({
+// Password check route
+app.post("/api/check-pass", (req, res) => {
+  const { password } = req.body;
+  if(password === "arzan") return res.json({ success: true });
+  else return res.json({ success: false });
+});
+
+
+// ------------------ MongoDB Atlas ------------------
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log("MongoDB Connected"))
+.catch(err => console.log("MongoDB Connection Error:", err));
+
+// ------------------ Message Schema ------------------
+const Message = mongoose.model("Message", new mongoose.Schema({
     username: String,
-    type: String,
     content: String,
-    filename: String,
+    type: { type: String, default: "text" }, // text or call
     timestamp: { type: Date, default: Date.now }
-});
-const Message = mongoose.model('Message', messageSchema);
+}));
 
-// Home route
-app.get('/', (req,res) => {
-    res.sendFile(path.join(__dirname,'public/index.html'));
-});
+// ------------------ Socket.IO ------------------
+let users = {}; // socketId -> username
 
-// DELETE MESSAGE (OWNER ONLY)
-app.delete('/api/message/:id', async (req,res) => {
-    const { username } = req.body;
-    try {
-        const msg = await Message.findById(req.params.id);
-        if(!msg) return res.status(404).json({ success:false });
-
-        if(msg.username !== username) {
-            return res.status(403).json({ success:false, message:"Not allowed" });
-        }
-
-        await Message.findByIdAndDelete(req.params.id);
-        res.json({ success:true });
-    } catch(err){
-        res.json({ success:false });
-    }
-});
-
-// Socket
-io.on('connection', (socket) => {
+io.on("connection", socket => {
     console.log("Connected:", socket.id);
 
-    socket.on('request messages', async () => {
-        const msgs = await Message.find().sort({ timestamp:1 });
-        socket.emit('load messages', msgs);
-    });
-
-    socket.on('user join', username => {
+    // User joins
+    socket.on("user join", async username => {
         socket.username = username;
-        io.emit('chat message', {
-            username:'System',
-            type:'text',
-            content:`${username} joined the chat`,
-            timestamp:new Date()
-        });
-    });
+        users[socket.id] = username;
 
-    socket.on('chat message', async msg => {
-        const saved = await Message.create(msg);
-        io.emit('chat message', saved);
-    });
+        io.emit("users", users);
 
-    socket.on('disconnect', () => {
-        if(socket.username){
-            io.emit('chat message',{
-                username:'System',
-                type:'text',
-                content:`${socket.username} left the chat`,
-                timestamp:new Date()
-            });
+        // Send chat history
+        try {
+            const messages = await Message.find().sort({ timestamp: 1 });
+            socket.emit("chat-history", messages);
+        } catch(err) {
+            console.log("Error fetching chat history:", err);
         }
+
+        // Notify system
+        const systemMsg = await Message.create({
+            username: "System",
+            content: `${username} joined`,
+            type: "text"
+        });
+        io.emit("chat message", systemMsg);
+    });
+
+    // Chat message
+    socket.on("chat message", async msg => {
+        try {
+            const saved = await Message.create(msg);
+            io.emit("chat message", saved);
+        } catch(err) {
+            console.log("Error saving message:", err);
+        }
+    });
+
+    // Call message
+    socket.on("call-msg", async msg => {
+        try {
+            const saved = await Message.create({ ...msg, type: "call" });
+            io.emit("chat message", saved);
+        } catch(err) { console.log(err); }
+    });
+
+    // WebRTC signaling
+    socket.on("call-user", ({ to, offer }) => {
+        if(users[to]) io.to(to).emit("incoming-call", { from: socket.id, username: socket.username, offer });
+    });
+
+    socket.on("accept-call", ({ to, answer }) => {
+        if(users[to]) io.to(to).emit("call-accepted", { from: socket.id, answer });
+    });
+
+    socket.on("reject-call", ({ to }) => {
+        if(users[to]) io.to(to).emit("call-rejected");
+    });
+
+    socket.on("end-call", ({ to }) => {
+        if(users[to]) io.to(to).emit("call-ended");
+    });
+
+    socket.on("ice-candidate", ({ to, candidate }) => {
+        if(users[to]) io.to(to).emit("ice-candidate", candidate);
+    });
+
+    // Disconnect
+    socket.on("disconnect", async () => {
+        const username = socket.username;
+        delete users[socket.id];
+        io.emit("users", users);
+
+        if(username){
+            const systemMsg = await Message.create({
+                username: "System",
+                content: `${username} left the chat`,
+                type: "text"
+            });
+            io.emit("chat message", systemMsg);
+        }
+
+        socket.broadcast.emit("call-ended");
+        console.log(`Disconnected: ${socket.id}`);
     });
 });
 
-// Dynamic port for Render
+// ------------------ Frontend ------------------
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/index.html"));
+});
+
+// ------------------ Server Port ------------------
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+console.log("Mongo URI exists:", !!process.env.MONGO_URI);
