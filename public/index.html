@@ -4,112 +4,90 @@
 <title>WhatsChat</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI;}
-body{background:#0b141a;display:flex;justify-content:center;align-items:center;height:100vh;}
-.app{width:380px;height:600px;background:#111b21;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;color:white;position:relative;}
-.header{background:#202c33;padding:15px;text-align:center;font-weight:bold;display:flex;justify-content:space-between;align-items:center;}
-.call-btn{background:#25d366;padding:10px;border-radius:50%;cursor:pointer;}
-.screen{flex:1;display:none;flex-direction:column;overflow:hidden;padding:10px;}
-.active{display:flex;}
-.messages{flex:1;overflow-y:auto;display:flex;flex-direction:column-reverse;padding-bottom:10px;}
-.msg{padding:8px;margin:5px;border-radius:15px;max-width:75%;word-wrap:break-word;}
-.me{background:#005c4b;margin-left:auto;color:white;}
-.other{background:#202c33;color:white;}
-.call-msg{background:#444;margin:5px;border-radius:6px;padding:8px;text-align:center;font-size:12px;color:#fff;}
-.chat-input{display:flex;gap:5px;align-items:center;padding:10px;background:#111b21;position:sticky;bottom:0;}
-.chat-input input{flex:1;border-radius:5px;padding:10px;font-size:16px;}
-.chat-input button{padding:10px;border-radius:5px;background:#00a884;color:white;font-weight:bold;cursor:pointer;}
-.popup{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;justify-content:center;align-items:center;flex-direction:column;color:white;}
-.reject{background:red;}
-.end{background:red;}
-.ring{animation:pulse 1.2s infinite;}
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
-.call-actions button{width:120px;margin:10px;}
-input,button{outline:none;border:none;}
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { background: linear-gradient(135deg, #0b141a, #1a1a2e); display: flex; justify-content: center; align-items: center; min-height: 100vh; color: white; }
+.app { width: 100%; max-width: 400px; height: 100vh; max-height: 700px; background: #111b21; border-radius: 15px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); position: relative; }
+.header { background: linear-gradient(90deg, #202c33, #2a3942); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 18px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); }
+.call-btn { background: #25d366; border: none; padding: 12px; border-radius: 50%; cursor: pointer; font-size: 18px; transition: 0.3s; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
+.call-btn:hover { background: #20c157; transform: scale(1.1); }
+.call-btn:disabled { background: #555; cursor: not-allowed; }
+.screen { flex: 1; display: none; flex-direction: column; overflow: hidden; padding: 15px; }
+.active { display: flex; }
+.messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: #2a3942 #111b21; }
+.messages::-webkit-scrollbar { width: 6px; }
+.messages::-webkit-scrollbar-track { background: #111b21; }
+.messages::-webkit-scrollbar-thumb { background: #2a3942; border-radius: 3px; }
+.msg { padding: 12px 16px; margin: 8px 0; border-radius: 18px; max-width: 75%; word-wrap: break-word; position: relative; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); }
+.me { background: linear-gradient(135deg, #005c4b, #00796b); margin-left: auto; color: white; align-self: flex-end; }
+.other { background: #202c33; color: white; align-self: flex-start; }
+.call-msg { background: #444; margin: 8px auto; border-radius: 10px; padding: 10px; text-align: center; font-size: 12px; color: #fff; max-width: 80%; }
+.chat-input { display: flex; gap: 10px; align-items: center; padding: 15px; background: #111b21; border-top: 1px solid #2a3942; position: sticky; bottom: 0; }
+.chat-input input { flex: 1; border-radius: 25px; padding: 12px 20px; font-size: 16px; background: #1f2c34; border: 1px solid #2a3942; color: white; transition: 0.3s; }
+.chat-input input::placeholder { color: #aebac1; }
+.chat-input input:focus { border-color: #00a884; box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.2); outline: none; }
+.chat-input button { padding: 12px; border-radius: 50%; background: #00a884; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; border: none; font-size: 16px; }
+.chat-input button:hover { background: #02c39a; transform: scale(1.1); }
+.attach-btn { background: #555; }
+.attach-btn:hover { background: #777; }
+.popup { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; justify-content: center; align-items: center; flex-direction: column; color: white; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.reject { background: #e63946; }
+.end { background: #e63946; }
+.ring { animation: pulse 1.2s infinite; }
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+.call-actions button { width: 140px; margin: 15px; border: none; padding: 15px; border-radius: 30px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+.call-actions button:first-child { background: #25d366; color: #000; }
+.call-actions button:first-child:hover { background: #2ee874; transform: scale(1.08); }
+.call-actions .reject { background: #e63946; color: white; }
+.call-actions .reject:hover { background: #ff4d5a; transform: scale(1.08); }
+.end { background: #e63946; color: white; padding: 15px 35px; border-radius: 30px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+.end:hover { background: #ff4d5a; transform: scale(1.08); }
+input[type="file"] { display: none; }
+.image-msg img { max-width: 200px; max-height: 200px; border-radius: 10px; cursor: pointer; }
+.image-msg { padding: 8px; }
 
-/* ===== INPUT UI IMPROVEMENT ===== */
-.screen input{
-  background:#1f2c34;
-  border:1px solid #2a3942;
-  color:white;
-  padding:14px;
-  border-radius:10px;
-  font-size:16px;
-  transition:0.3s;
+/* ===== AUTH SCREENS FIX ===== */
+.auth-screen {
+  justify-content: center;
+  gap: 20px;
 }
 
-.screen input::placeholder{
-  color:#aebac1;
+.auth-screen input {
+  width: 100%;
+  background: #1f2c34;
+  border: 1px solid #2a3942;
+  color: white;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
 }
 
-.screen input:focus{
-  border-color:#00a884;
-  box-shadow:0 0 0 2px rgba(0,168,132,0.2);
+.auth-screen input::placeholder {
+  color: #aebac1;
 }
 
-/* ===== BUTTON UI (NEXT / JOIN CHAT) ===== */
-.screen button{
-  background:#00a884;
-  color:white;
-  padding:14px;
-  border-radius:10px;
-  font-size:16px;
-  font-weight:600;
-  cursor:pointer;
-  transition:0.3s;
+.auth-screen input:focus {
+  border-color: #00a884;
+  box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.25);
+  outline: none;
 }
 
-.screen button:hover{
-  background:#02c39a;
-  transform:translateY(-1px);
+.auth-screen button {
+  width: 100%;
+  background: linear-gradient(135deg, #00a884, #02c39a);
+  color: white;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: 0.3s;
 }
 
-/* ===== CALL ACCEPT / REJECT BUTTON ===== */
-.call-actions button{
-  border:none;
-  padding:14px 24px;
-  border-radius:30px;
-  font-size:16px;
-  font-weight:600;
-  cursor:pointer;
-  transition:0.3s;
-}
-
-.call-actions button:first-child{
-  background:#25d366;   /* Accept */
-  color:#000;
-}
-
-.call-actions button:first-child:hover{
-  background:#2ee874;
-  transform:scale(1.08);
-}
-
-.call-actions .reject{
-  background:#e63946;
-  color:white;
-}
-
-.call-actions .reject:hover{
-  background:#ff4d5a;
-  transform:scale(1.08);
-}
-
-/* ===== END CALL BUTTON ===== */
-.end{
-  background:#e63946;
-  color:white;
-  padding:14px 30px;
-  border-radius:30px;
-  font-size:16px;
-  font-weight:600;
-  cursor:pointer;
-  transition:0.3s;
-}
-
-.end:hover{
-  background:#ff4d5a;
-  transform:scale(1.08);
+.auth-screen button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 168, 132, 0.35);
 }
 
 </style>
@@ -118,27 +96,30 @@ input,button{outline:none;border:none;}
 
 <div class="app">
   <div class="header">
-    WhatsChat
+    <span>WhatsChat</span>
     <button id="callBtn" class="call-btn" disabled>📞</button>
   </div>
 
   <!-- PASSWORD SCREEN -->
-  <div class="screen active" id="passScreen">
-    <input id="password" placeholder="Enter password">
-    <button onclick="checkPass()">Next</button>
-  </div>
+<div class="screen active auth-screen" id="passScreen">
+  <input id="password" type="password" placeholder="Enter password">
+  <button onclick="checkPass()">Next</button>
+</div>
 
-  <!-- USERNAME SCREEN -->
-  <div class="screen" id="userScreen">
-    <input id="username" placeholder="Enter username">
-    <button onclick="joinChat()">Join Chat</button>
-  </div>
+<!-- USERNAME SCREEN -->
+<div class="screen auth-screen" id="userScreen">
+  <input id="username" placeholder="Enter username">
+  <button onclick="joinChat()">Join Chat</button>
+</div>
+
 
   <!-- CHAT SCREEN -->
   <div class="screen" id="chatScreen">
     <div class="messages" id="messages"></div>
     <div class="chat-input">
-      <input id="input" placeholder="Type message">
+      <input id="input" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMsg()">
+      <input type="file" id="fileInput" accept="image/*">
+      <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
       <button onclick="sendMsg()">➤</button>
     </div>
   </div>
@@ -164,147 +145,161 @@ input,button{outline:none;border:none;}
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-let users={}, pc, stream, target, myUsername;
-const ICE={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+let users = {}, pc, stream, target, myUsername;
+const ICE = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
 // STEP 1: PASSWORD
-async function checkPass(){
+async function checkPass() {
   const passInput = document.getElementById("password");
-  try{
+  try {
     const res = await fetch("/api/check-pass", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: passInput.value })
     });
     const data = await res.json();
-    if(!data.success){ 
-      alert("Wrong password"); 
-      passInput.value=""; 
-      return; 
+    if (!data.success) {
+      alert("Wrong password");
+      passInput.value = "";
+      return;
     }
     document.getElementById("passScreen").classList.remove("active");
     document.getElementById("userScreen").classList.add("active");
-  } catch(err){
+  } catch (err) {
     console.error(err);
     alert("Server error");
   }
 }
 
 // STEP 2: USERNAME
-function joinChat(){
+function joinChat() {
   myUsername = document.getElementById("username").value.trim();
-  if(!myUsername){ alert("Enter username"); return; }
+  if (!myUsername) { alert("Enter username"); return; }
   socket.emit("user join", myUsername);
   document.getElementById("userScreen").classList.remove("active");
   document.getElementById("chatScreen").classList.add("active");
 }
 
 // TIMESTAMP FORMAT
-function formatTimestamp(ts){
-  const d=new Date(ts);
-  return d.toLocaleString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+function formatTimestamp(ts) {
+  const d = new Date(ts);
+  return d.toLocaleString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 // UPDATE USERS
-socket.on("users", u=>{
-  users=u;
-  document.getElementById("callBtn").disabled = Object.keys(users).length<2;
+socket.on("users", u => {
+  users = u;
+  document.getElementById("callBtn").disabled = Object.keys(users).length < 2;
 });
 
 // SEND MESSAGE
-function sendMsg(){
-  const input=document.getElementById("input");
-  if(!input.value) return;
-  socket.emit("chat message",{username: myUsername, content: input.value});
-  input.value="";
+function sendMsg() {
+  const input = document.getElementById("input");
+  const fileInput = document.getElementById("fileInput");
+  if (input.value) {
+    socket.emit("chat message", { username: myUsername, content: input.value, type: "text" });
+    input.value = "";
+  } else if (fileInput.files[0]) {
+    const file = fileInput.files[0];
+    if (file.size > 5 * 1024 * 1024) { alert("Image too large (max 5MB)"); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      socket.emit("chat message", { username: myUsername, content: reader.result, type: "image" });
+      fileInput.value = "";
+    };
+    reader.readAsDataURL(file);
+  }
 }
 
 // RENDER MESSAGE
-function renderMessage(m){
-  const div=document.createElement("div");
-  if(m.type==="call"){ 
-    div.className="call-msg"; 
-    div.innerText=`📞 Call ${m.status||"info"} by ${m.username} at ${formatTimestamp(m.timestamp)}`;
+function renderMessage(m) {
+  const div = document.createElement("div");
+  if (m.type === "call") {
+    div.className = "call-msg";
+    div.innerText = `📞 Call ${m.status || "info"} by ${m.username} at ${formatTimestamp(m.timestamp)}`;
+  } else if (m.type === "image") {
+    div.className = "msg image-msg " + (m.username === myUsername ? "me" : "other");
+    div.innerHTML = `<img src="${m.content}" onclick="window.open(this.src)" alt="Image"><br><small>${m.username}</small><br><small style="font-size:10px;color:#aaa;">${formatTimestamp(m.timestamp)}</small>`;
   } else {
-    div.className="msg "+(m.username===myUsername?"me":"other");
-    div.innerHTML=`<b>${m.username}</b>: ${m.content}<br><small style="font-size:10px;color:#aaa;">${formatTimestamp(m.timestamp)}</small>`;
+    div.className = "msg " + (m.username === myUsername ? "me" : "other");
+    div.innerHTML = `<b>${m.username}</b>: ${m.content}<br><small style="font-size:10px;color:#aaa;">${formatTimestamp(m.timestamp)}</small>`;
   }
   document.getElementById("messages").insertBefore(div, document.getElementById("messages").firstChild);
 }
 
 // RECEIVE CHAT HISTORY
-socket.on("chat-history", msgs=>{
-  document.getElementById("messages").innerHTML="";
-  msgs.reverse().forEach(m=>renderMessage(m));
+socket.on("chat-history", msgs => {
+  document.getElementById("messages").innerHTML = "";
+  msgs.reverse().forEach(m => renderMessage(m));
 });
 
 // RECEIVE NEW MESSAGE
-socket.on("chat message", m=>renderMessage(m));
+socket.on("chat message", m => renderMessage(m));
 
 // INITIATE CALL
-document.getElementById("callBtn").onclick = async ()=>{
-  target = Object.keys(users).find(id=>id!==socket.id);
-  if(!target) return alert("No one to call");
-  stream = await navigator.mediaDevices.getUserMedia({audio:true});
+document.getElementById("callBtn").onclick = async () => {
+  target = Object.keys(users).find(id => id !== socket.id);
+  if (!target) return alert("No one to call");
+  stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   pc = new RTCPeerConnection(ICE);
-  stream.getTracks().forEach(t=>pc.addTrack(t, stream));
-  pc.ontrack = e=>document.getElementById("remoteAudio").srcObject = e.streams[0];
-  pc.onicecandidate = e=>e.candidate && socket.emit("ice-candidate",{to: target, candidate:e.candidate});
+  stream.getTracks().forEach(t => pc.addTrack(t, stream));
+  pc.ontrack = e => document.getElementById("remoteAudio").srcObject = e.streams[0];
+  pc.onicecandidate = e => e.candidate && socket.emit("ice-candidate", { to: target, candidate: e.candidate });
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
-  socket.emit("call-user",{to: target, offer, username: myUsername});
+  socket.emit("call-user", { to: target, offer, username: myUsername });
 };
 
 // INCOMING CALL
-socket.on("incoming-call", d=>{
-  target=d.from;
-  document.getElementById("callPopup").style.display="flex";
-  document.getElementById("callerText").innerText=d.username+" is calling...";
-  window.offer=d.offer;
+socket.on("incoming-call", d => {
+  target = d.from;
+  document.getElementById("callPopup").style.display = "flex";
+  document.getElementById("callerText").innerText = d.username + " is calling...";
+  window.offer = d.offer;
 });
 
 // ACCEPT CALL
-async function acceptCall(){
-  document.getElementById("callPopup").style.display="none";
-  document.getElementById("onCall").style.display="flex";
-  stream = await navigator.mediaDevices.getUserMedia({audio:true});
+async function acceptCall() {
+  document.getElementById("callPopup").style.display = "none";
+  document.getElementById("onCall").style.display = "flex";
+  stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   pc = new RTCPeerConnection(ICE);
-  stream.getTracks().forEach(t=>pc.addTrack(t, stream));
-  pc.ontrack = e=>document.getElementById("remoteAudio").srcObject = e.streams[0];
-  pc.onicecandidate = e=>e.candidate && socket.emit("ice-candidate",{to: target, candidate:e.candidate});
+  stream.getTracks().forEach(t => pc.addTrack(t, stream));
+  pc.ontrack = e => document.getElementById("remoteAudio").srcObject = e.streams[0];
+  pc.onicecandidate = e => e.candidate && socket.emit("ice-candidate", { to: target, candidate: e.candidate });
   await pc.setRemoteDescription(window.offer);
   const ans = await pc.createAnswer();
   await pc.setLocalDescription(ans);
-  socket.emit("accept-call",{to: target, answer: ans});
+  socket.emit("accept-call", { to: target, answer: ans });
 }
 
 // REJECT CALL
-function rejectCall(){
-  document.getElementById("callPopup").style.display="none";
-  socket.emit("reject-call",{to: target});
+function rejectCall() {
+  document.getElementById("callPopup").style.display = "none";
+  socket.emit("reject-call", { to: target });
 }
 
 // CALL ACCEPTED
-socket.on("call-accepted", async d=>{
-  document.getElementById("onCall").style.display="flex";
+socket.on("call-accepted", async d => {
+  document.getElementById("onCall").style.display = "flex";
   await pc.setRemoteDescription(d.answer);
 });
 
 // END CALL
-function endCall(){
-  if(pc) pc.close();
-  document.getElementById("onCall").style.display="none";
-  socket.emit("end-call",{to: target});
+function endCall() {
+  if (pc) pc.close();
+  document.getElementById("onCall").style.display = "none";
+  socket.emit("end-call", { to: target });
 }
 
 // CALL EVENTS
-socket.on("call-ended", ()=>{
-  if(pc) pc.close();
-  document.getElementById("onCall").style.display="none";
-  document.getElementById("callPopup").style.display="none";
+socket.on("call-ended", () => {
+  if (pc) pc.close();
+  document.getElementById("onCall").style.display = "none";
+  document.getElementById("callPopup").style.display = "none";
 });
-socket.on("call-rejected", ()=>alert("Call rejected"));
-socket.on("ice-candidate", c=>{ if(pc) pc.addIceCandidate(c); });
+socket.on("call-rejected", () => alert("Call rejected"));
+socket.on("ice-candidate", c => { if (pc) pc.addIceCandidate(c); });
 </script>
 
 </body>
